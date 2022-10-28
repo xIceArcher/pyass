@@ -20,3 +20,10 @@ class BorderStyle(Enum):
 
     def __str__(self) -> str:
         return str(self.value)
+
+class EventFormat(Enum):
+    DIALOGUE = 'Dialogue'
+    COMMENT = 'Comment'
+
+    def __str__(self) -> str:
+        return str(self.value)

@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import Iterable, OrderedDict
 
 from pyass.event import Event
 from pyass.section import AegisubGarbageSection, EventsSection, ScriptInfoSection, Section, StylesSection
@@ -12,7 +11,7 @@ class Script:
     styles: StylesSection = field(default_factory=StylesSection)
     events: EventsSection = field(default_factory=EventsSection)
 
-    def __init__(self, scriptInfo: Iterable = OrderedDict(), aegisubGarbage: Iterable = OrderedDict(), styles: list[Style] = [], events: list[Event] = []):
+    def __init__(self, scriptInfo: list[tuple[str, str]] = [], aegisubGarbage: list[tuple[str, str]] = [], styles: list[Style] = [], events: list[Event] = []):
         self.scriptInfo = ScriptInfoSection(scriptInfo)
         self.aegisubGarbage = AegisubGarbageSection(aegisubGarbage)
         self.styles = StylesSection(styles)

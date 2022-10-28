@@ -1,7 +1,7 @@
-from enum import Enum
 from dataclasses import InitVar, dataclass, field
 import re
 
+from pyass.enum import EventFormat
 from pyass.tag import Tag, Tags
 from pyass.timedelta import timedelta
 
@@ -16,13 +16,6 @@ class EventPart:
 
     def __str__(self) -> str:
         return ('{' + str(self.tags) +'}' if self.tags else '') + self.text
-
-class EventFormat(Enum):
-    DIALOGUE = 'Dialogue'
-    COMMENT = 'Comment'
-
-    def __str__(self) -> str:
-        return str(self.value)
 
 @dataclass
 class Event:
