@@ -1,9 +1,11 @@
-from dataclasses import InitVar, dataclass, field
 import re
+from dataclasses import InitVar, dataclass, field
+from typing import TypeVar
 
 from pyass.enum import EventFormat
 from pyass.tag import Tag, Tags
 from pyass.timedelta import timedelta
+
 
 @dataclass
 class EventPart:
@@ -16,6 +18,8 @@ class EventPart:
 
     def __str__(self) -> str:
         return ('{' + str(self.tags) +'}' if self.tags else '') + self.text
+
+Event = TypeVar("Event", bound="Event")
 
 @dataclass
 class Event:
@@ -31,18 +35,20 @@ class Event:
     effect: str = ''
     parts: list[EventPart] = field(default_factory=list)
     text: InitVar[str] = '' # type: ignore
-    shouldParseTags: InitVar[bool] = True
+    _unknownRawText: str = field(init=False)
 
-    def __post_init__(self, text, shouldParseTags):
+    def __post_init__(self, text):
+        self._unknownRawText = ''
+
         if type(text) is not property:
-            if shouldParseTags:
-                self.parts = self._parse_text_to_parts(text)
-            else:
-                self.parts = [EventPart(text=text)]        
+            self._set_parts_from_text(text)
 
     def __str__(self) -> str:
+        if self._unknownRawText:
+            return self._unknownRawText
+
         # Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-        return f'{self.format}: {self.layer},{self.start},{self.end},{self.style},{self.name},{self.marginL},{self.marginR},{self.marginV},{self.effect},{self.text}'
+        return f'{self.format}: {self.layer},{self.start},{self.end},{self.style},{self.name},{self.marginL},{self.marginR},{self.marginV},{self.effect},{self.text}'  # type: ignore
 
     @property
     def text(self) -> str:
@@ -50,8 +56,31 @@ class Event:
 
     @text.setter
     def text(self, text: str) -> None:
-        self.parts = self._parse_text_to_parts(text)
+        self._set_parts_from_text(text)
 
-    def _parse_text_to_parts(self, text: str) -> list[EventPart]:
-        parsed = [EventPart(tags=Tags.parse(tagPart), text=textPart) for tagPart, textPart in re.findall(r'\{([^\}]*)\}([^\{]*)', text)]
-        return parsed if parsed else [EventPart(text=text)]
+    @staticmethod
+    def parse(s: str) -> Event:
+        ret = Event()
+
+        try:
+            formatStr, rest = s.split(':', 1)
+            if formatStr not in [e.value for e in EventFormat]:
+                raise ValueError
+            ret.format = EventFormat(formatStr)
+
+            layerStr, startStr, endStr, ret.style, ret.name, marginLStr, marginRStr, marginVStr, ret.effect, ret.text = rest.strip().split(',', 9) # type: ignore
+            ret.layer, ret.marginL, ret.marginR, ret.marginV = map(int, [layerStr, marginLStr, marginRStr, marginVStr])
+            ret.start, ret.end = map(timedelta.parse, [startStr, endStr])
+        except:
+            ret._unknownRawText = s
+
+        return ret
+
+    def _set_parts_from_text(self, text: str) -> None:
+        if not text:
+            self.parts = []
+
+        self.parts = [EventPart(tags=Tags.parse(tagPart), text=textPart) for tagPart, textPart in re.findall(r'\{([^\}]*)\}([^\{]*)', text)]
+        if self.text != text: # type: ignore
+            # Failed to parse for some reason
+            self.parts = [EventPart(text=text)]

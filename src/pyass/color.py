@@ -1,4 +1,7 @@
 from dataclasses import dataclass
+from typing import TypeVar
+
+Color = TypeVar("Color", bound="Color")
 
 @dataclass
 class Color:

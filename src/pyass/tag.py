@@ -1,45 +1,45 @@
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-import re
+from typing import TypeVar
 
 from pyass.enum import Alignment
 from pyass.timedelta import timedelta
 
+Tag = TypeVar("Tag", bound="Tag")
+
 class Tag(ABC):
     @staticmethod
     @abstractmethod
-    def prefixes() -> tuple[str, ...]:
-        return ()
+    def prefixes() -> list[str]:
+        return NotImplementedError
+
+    @staticmethod
+    def parse(s: str):
+        for TagType in Tag.knownTagTypes():
+            if s.startswith(tuple(TagType.prefixes())):
+                for prefix in TagType.prefixes():
+                    if s.startswith(prefix):
+                        try:
+                            return TagType._parse(prefix, s.removeprefix(prefix))
+                        except:
+                            return UnknownTag(s)
+
+        return UnknownTag(s)
 
     @staticmethod
     @abstractmethod
-    def parse(s: str):
-        return UnknownTag(s)
+    def _parse(prefix: str, rest: str) -> Tag:
+        raise NotImplementedError
+
+    @staticmethod
+    def knownTagTypes() -> list[type[Tag]]:
+        return [FadeTag, KaraokeTag, IFXTag, BlurEdgesTag, AlignmentTag, PositionTag]
 
 class Tags(list[Tag]):
     @staticmethod
     def parse(s: str):
-        ret = []
-        for tagStr in re.findall(r'\\([^\\]*)', s):
-            tagStr: str
-
-            tag = None
-            for TagType in Tags.tagtypes():
-                TagType: type[Tag]
-                
-                if tagStr.startswith(TagType.prefixes()):
-                    tag = TagType.parse(tagStr)
-
-            if tag is None:
-                tag = UnknownTag.parse(tagStr)
-
-            ret.append(tag)
-
-        return ret
-
-    @staticmethod
-    def tagtypes() -> list[type[Tag]]:
-        return [FadeTag, KaraokeTag, IFXTag]
+        return [Tag.parse(tagStr) for tagStr in re.findall(r'(\\[^\\]*)', s)]
 
     def __str__(self) -> str:
         return ''.join(str(tag) for tag in self)
@@ -49,12 +49,12 @@ class UnknownTag(Tag):
     text: str
 
     @staticmethod
-    def prefixes() -> tuple[str, ...]:
-        return Tag.prefixes()
+    def prefixes() -> list[str]:
+        return []
 
     @staticmethod
-    def parse(s: str):
-        return Tag.parse(s)
+    def _parse(prefix: str, rest: str) -> Tag:
+        return UnknownTag(prefix + rest)
 
     def __str__(self) -> str:
         return rf'\{self.text}'
@@ -65,16 +65,16 @@ class FadeTag(Tag):
     outDuration: timedelta = timedelta(0)
 
     @staticmethod
-    def prefixes() -> tuple[str, ...]:
-        return ('fad', )
+    def prefixes() -> list[str]:
+        return [r'\fad']
 
     @staticmethod
-    def parse(s: str):
-        if s.startswith('fad'):
-            inDuration, outDuration = re.findall(r'fad\(([0-9]+),([0-9]+)\)', s)[0]
-            return FadeTag(timedelta(milliseconds=int(inDuration)), timedelta(milliseconds=int(outDuration)))
+    def _parse(prefix: str, rest: str) -> Tag:
+        if prefix not in FadeTag.prefixes():
+            raise ValueError
 
-        return FadeTag()
+        inDuration, outDuration = re.findall(r'\(([0-9]+),([0-9]+)\)', rest)[0]
+        return FadeTag(timedelta(milliseconds=int(inDuration)), timedelta(milliseconds=int(outDuration)))
 
     def __str__(self) -> str:
         return rf'\fad({self.inDuration.total_milliseconds()},{self.outDuration.total_milliseconds()})'
@@ -85,19 +85,19 @@ class KaraokeTag(Tag):
     isSlide: bool = True
 
     @staticmethod
-    def prefixes() -> tuple[str, ...]:
-        return ('kf', 'K', 'k')
+    def prefixes() -> list[str]:
+        return [r'\kf', r'\K', r'\k']
 
     @staticmethod
-    def parse(s: str):
-        if s.startswith('kf'):
-            return KaraokeTag(duration=timedelta(centiseconds=int(s.removeprefix('kf'))), isSlide=True)
-        elif s.startswith('K'):
-            return KaraokeTag(duration=timedelta(centiseconds=int(s.removeprefix('K'))), isSlide=True)
-        elif s.startswith('k'):
-            return KaraokeTag(duration=timedelta(centiseconds=int(s.removeprefix('k'))), isSlide=False)
+    def _parse(prefix: str, rest: str) -> Tag:
+        if prefix == r'\kf':
+            return KaraokeTag(duration=timedelta(centiseconds=int(rest)), isSlide=True)
+        elif prefix == r'\K':
+            return KaraokeTag(duration=timedelta(centiseconds=int(rest)), isSlide=True)
+        elif prefix == r'\k':
+            return KaraokeTag(duration=timedelta(centiseconds=int(rest)), isSlide=False)
         else:
-            return KaraokeTag()
+            raise ValueError
 
     def __str__(self) -> str:
         return (r'\kf' if self.isSlide else r'\k') + f'{self.duration.total_centiseconds()}'
@@ -107,15 +107,15 @@ class IFXTag(Tag):
     ifx: str = ''
 
     @staticmethod
-    def prefixes() -> tuple[str, ...]:
-        return ('-', )
+    def prefixes() -> list[str]:
+        return [r'\-']
 
     @staticmethod
-    def parse(s: str):
-        if s.startswith('-'):
-            return IFXTag(s.removeprefix('-'))
+    def _parse(prefix: str, rest: str) -> Tag:
+        if prefix not in IFXTag.prefixes():
+            raise ValueError
 
-        return IFXTag()
+        return IFXTag(rest)
 
     def __str__(self) -> str:
         return rf'\-{self.ifx}'
@@ -135,12 +135,13 @@ class TransformTag(Tag):
     transformations: list[Transformation] = field(default_factory=list)
 
     @staticmethod
-    def prefixes() -> tuple[str, ...]:
-        return ('t', )
+    def prefixes() -> list[str]:
+        return [r'\t']
 
     @staticmethod
-    def parse(s: str):
-        return Tag.parse(s)
+    def _parse(prefix: str, rest: str) -> Tag:
+        # TODO
+        return UnknownTag._parse(prefix, rest)
 
     def __str__(self) -> str:
         return self.startState + ''.join([str(transformation) for transformation in self.transformations])
@@ -150,15 +151,15 @@ class BlurEdgesTag(Tag):
     strength: int = 0
 
     @staticmethod
-    def prefixes() -> tuple[str, ...]:
-        return ('be', )
+    def prefixes() -> list[str]:
+        return [r'\be']
 
     @staticmethod
-    def parse(s: str):
-        if s.startswith('be'):
-            return BlurEdgesTag(int(s.removeprefix('be')))
+    def _parse(prefix: str, rest: str) -> Tag:
+        if prefix not in BlurEdgesTag.prefixes():
+            raise ValueError
 
-        return BlurEdgesTag()
+        return BlurEdgesTag(int(rest))
 
     def __str__(self) -> str:
         return rf'\be{self.strength}'
@@ -168,15 +169,15 @@ class AlignmentTag(Tag):
     alignment: Alignment = Alignment.BOTTOM
 
     @staticmethod
-    def prefixes() -> tuple[str, ...]:
-        return ('an', )
+    def prefixes() -> list[str]:
+        return [r'\an']
 
     @staticmethod
-    def parse(s: str):
-        if s.startswith('an'):
-            return AlignmentTag(Alignment(int(s.removeprefix('an'))))
+    def _parse(prefix: str, rest: str) -> Tag:
+        if prefix not in AlignmentTag.prefixes():
+            raise ValueError
 
-        return AlignmentTag()
+        return AlignmentTag(Alignment(int(rest)))
 
     def __str__(self) -> str:
         return rf'\an{self.alignment.value}'
@@ -187,16 +188,16 @@ class PositionTag(Tag):
     y: int = 0
 
     @staticmethod
-    def prefixes() -> tuple[str, ...]:
-        return ('pos', )
+    def prefixes() -> list[str]:
+        return [r'\pos']
 
     @staticmethod
-    def parse(s: str):
-        if s.startswith('pos'):
-            x, y = re.findall(r'pos\(([0-9]+),([0-9]+)\)', s)[0]
-            return PositionTag(int(x), int(y))
+    def _parse(prefix: str, rest: str) -> Tag:
+        if prefix not in PositionTag.prefixes():
+            raise ValueError
 
-        return PositionTag()
+        x, y = re.findall(r'\(([0-9]+),([0-9]+)\)', rest)[0]
+        return PositionTag(int(x), int(y))
 
     def __str__(self) -> str:
         return rf'\pos({self.x},{self.y})'
