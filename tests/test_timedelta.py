@@ -21,11 +21,13 @@ class TestTimedelta:
             assert timedelta.parse(s) == o
 
     def test_conversion(self):
+        assert timedelta(microseconds=290000).total_milliseconds() == 290
         assert timedelta(milliseconds=1000).total_milliseconds() == 1000
         assert timedelta(seconds=1).total_milliseconds() == 1000
         assert timedelta(minutes=1).total_milliseconds() == 60 * 1000
         assert timedelta(hours=5).total_milliseconds() == 5 * 60 * 60 * 1000
 
+        assert timedelta(microseconds=290000).total_centiseconds() == 29
         assert timedelta(milliseconds=1000).total_centiseconds() == 100
         assert timedelta(seconds=1).total_centiseconds() == 100
         assert timedelta(minutes=1).total_centiseconds() == 60 * 100

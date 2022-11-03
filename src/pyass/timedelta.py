@@ -62,7 +62,7 @@ class timedelta(datetime.timedelta):
             return result
 
     def total_centiseconds(self) -> int:
-        return int(self.total_seconds() * 100)
+        return int(round(self.total_seconds() * 100))
 
     def total_milliseconds(self) -> int:
-        return int(self.total_seconds() * 1000)
+        return int(round(self.total_seconds() * 1000))

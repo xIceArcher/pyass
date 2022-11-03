@@ -77,10 +77,29 @@ class Event:
         return ret
 
     def _set_parts_from_text(self, text: str) -> None:
+        # Short-circuit for empty string
         if not text:
             self.parts = []
+            return
 
-        self.parts = [EventPart(tags=Tags.parse(tagPart), text=textPart) for tagPart, textPart in re.findall(r'\{([^\}]*)\}([^\{]*)', text)]
-        if self.text != text: # type: ignore
-            # Failed to parse for some reason
+        # Short-circuit for text with no tags
+        if '{' not in text or '}' not in text:
             self.parts = [EventPart(text=text)]
+            return
+
+        originalText = text
+        try:
+            self.parts = []
+
+            if not text.startswith('{'):
+                # Consume everything up to the first {
+                tagStartIdx = text.index('{')
+                self.parts.append(EventPart(text=text[:tagStartIdx]))
+                text = text[tagStartIdx:]
+
+            # Then try to parse the rest of the line
+            self.parts.extend([EventPart(tags=Tags.parse(tagPart), text=textPart) for tagPart, textPart in re.findall(r'\{([^\}]*)\}([^\{]*)', text)])
+        finally:
+            # Sanity check: if parsing failed, give up parsing
+            if self.text != originalText: # type: ignore
+                self.parts = [EventPart(text=text)]

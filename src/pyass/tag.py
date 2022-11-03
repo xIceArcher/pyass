@@ -39,7 +39,29 @@ class Tag(ABC):
 class Tags(list[Tag]):
     @staticmethod
     def parse(s: str):
-        return [Tag.parse(tagStr) for tagStr in re.findall(r'(\\[^\\]*)', s)]
+        if '\\' not in s:
+            return [Tag.parse(s)]
+
+        ret = []
+        currBracketLevel = 0
+        currTag = ''
+        for c in s:
+            if c == '\\' and currBracketLevel == 0:
+                # This is the start of a new tag
+                if currTag != '':
+                    ret.append(Tag.parse(currTag))
+                    currTag = ''
+            elif c == '(':
+                currBracketLevel += 1
+            elif c == ')':
+                currBracketLevel -= 1
+
+            currTag += c
+
+        if currTag != '':
+            ret.append(Tag.parse(currTag))
+
+        return ret
 
     def __str__(self) -> str:
         return ''.join(str(tag) for tag in self)
@@ -57,12 +79,12 @@ class UnknownTag(Tag):
         return UnknownTag(prefix + rest)
 
     def __str__(self) -> str:
-        return rf'\{self.text}'
+        return self.text
 
 @dataclass
 class FadeTag(Tag):
-    inDuration: timedelta = timedelta(0)
-    outDuration: timedelta = timedelta(0)
+    inDuration: timedelta = timedelta()
+    outDuration: timedelta = timedelta()
 
     @staticmethod
     def prefixes() -> list[str]:
@@ -81,7 +103,7 @@ class FadeTag(Tag):
 
 @dataclass
 class KaraokeTag(Tag):
-    duration: timedelta = timedelta(0)
+    duration: timedelta = timedelta()
     isSlide: bool = True
 
     @staticmethod
@@ -122,8 +144,8 @@ class IFXTag(Tag):
 
 @dataclass
 class Transformation:
-    start: timedelta = timedelta(0)
-    end: timedelta = timedelta(0)
+    start: timedelta = timedelta()
+    end: timedelta = timedelta()
     toState: str = ''
 
     def __str__(self) -> str:
