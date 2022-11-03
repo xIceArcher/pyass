@@ -12,6 +12,11 @@ class TestTag():
             (KaraokeTag(duration=timedelta(centiseconds=20),isSlide=True), r'\kf20'),
             (KaraokeTag(duration=timedelta(centiseconds=20),isSlide=False), r'\k20'),
 
+            (TransformTag(to=Tags([AlignmentTag(Alignment.TOP)])), r'\t(\an8)'),
+            (TransformTag(accel=0.5,to=Tags([AlignmentTag(Alignment.TOP)])), r'\t(0.5,\an8)'),
+            (TransformTag(start=timedelta(milliseconds=200),end=timedelta(milliseconds=700),to=Tags([AlignmentTag(Alignment.TOP)])), r'\t(200,700,\an8)'),
+            (TransformTag(start=timedelta(milliseconds=200),end=timedelta(milliseconds=700),accel=0.5,to=Tags([AlignmentTag(Alignment.TOP)])), r'\t(200,700,0.5,\an8)'),
+
             (BlurEdgesTag(10), r'\be10'),
 
             (AlignmentTag(Alignment.TOP_LEFT), r'\an7'),
@@ -28,14 +33,3 @@ class TestTag():
         ]:
             assert str(o) ==  s
             assert Tag.parse(s) == o
-
-    def test_transform_tag(self):
-        # TODO: Fix tests
-        assert str(TransformTag(startState=r'\3c&H009C3EEC\4c&H008620D6', transformations=[
-            Transformation(start=timedelta(milliseconds=200), end=timedelta(milliseconds=300), toState=r'\3c&H0021B2D1\4c&H00118DA4')
-        ])) == r'\3c&H009C3EEC\4c&H008620D6\t(200,300,\3c&H0021B2D1\4c&H00118DA4)'
-
-        assert str(TransformTag(startState=r'\3c&H009C3EEC\4c&H008620D6', transformations=[
-            Transformation(start=timedelta(milliseconds=200), end=timedelta(milliseconds=300), toState=r'\3c&H0021B2D1\4c&H00118DA4'),
-            Transformation(start=timedelta(milliseconds=1000), end=timedelta(milliseconds=2000), toState=r'\3c&H00C6921B\4c&H00A06C01')
-        ])) == r'\3c&H009C3EEC\4c&H008620D6\t(200,300,\3c&H0021B2D1\4c&H00118DA4)\t(1000,2000,\3c&H00C6921B\4c&H00A06C01)'

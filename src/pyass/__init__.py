@@ -8,7 +8,7 @@ from .section import (AegisubGarbageSection, EventsSection, ScriptInfoSection,
                       Section, StylesSection, UnknownSection)
 from .style import Style
 from .tag import (AlignmentTag, BlurEdgesTag, FadeTag, IFXTag, KaraokeTag,
-                  PositionTag, Tag, Tags, Transformation, TransformTag,
+                  PositionTag, Tag, Tags, TransformTag,
                   UnknownTag)
 from .timedelta import timedelta
 

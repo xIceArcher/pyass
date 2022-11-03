@@ -7,6 +7,7 @@ from pyass.enum import Alignment
 from pyass.timedelta import timedelta
 
 Tag = TypeVar("Tag", bound="Tag")
+Tags = TypeVar("Tags", bound="Tags")
 
 class Tag(ABC):
     @staticmethod
@@ -15,7 +16,7 @@ class Tag(ABC):
         return NotImplementedError
 
     @staticmethod
-    def parse(s: str):
+    def parse(s: str) -> Tag:
         for TagType in Tag.knownTagTypes():
             if s.startswith(tuple(TagType.prefixes())):
                 for prefix in TagType.prefixes():
@@ -34,15 +35,15 @@ class Tag(ABC):
 
     @staticmethod
     def knownTagTypes() -> list[type[Tag]]:
-        return [FadeTag, KaraokeTag, IFXTag, BlurEdgesTag, AlignmentTag, PositionTag]
+        return [FadeTag, KaraokeTag, IFXTag, TransformTag, BlurEdgesTag, AlignmentTag, PositionTag]
 
 class Tags(list[Tag]):
     @staticmethod
-    def parse(s: str):
+    def parse(s: str) -> Tags:
         if '\\' not in s:
-            return [Tag.parse(s)]
+            return Tags([Tag.parse(s)])
 
-        ret = []
+        ret = Tags()
         currBracketLevel = 0
         currTag = ''
         for c in s:
@@ -143,18 +144,11 @@ class IFXTag(Tag):
         return rf'\-{self.ifx}'
 
 @dataclass
-class Transformation:
+class TransformTag(Tag):
     start: timedelta = timedelta()
     end: timedelta = timedelta()
-    toState: str = ''
-
-    def __str__(self) -> str:
-        return rf'\t({self.start.total_milliseconds()},{self.end.total_milliseconds()},{self.toState})'
-
-@dataclass
-class TransformTag(Tag):
-    startState: str = ''
-    transformations: list[Transformation] = field(default_factory=list)
+    accel: float = 1.0
+    to: Tags = field(default_factory=Tags)
 
     @staticmethod
     def prefixes() -> list[str]:
@@ -162,11 +156,30 @@ class TransformTag(Tag):
 
     @staticmethod
     def _parse(prefix: str, rest: str) -> Tag:
-        # TODO
-        return UnknownTag._parse(prefix, rest)
+        if prefix not in TransformTag.prefixes():
+            raise ValueError
+
+        parts = rest.removeprefix(r'\t').removeprefix('(').removesuffix(')').split(',')
+        if len(parts) == 1:
+            return TransformTag(to=Tags.parse(parts[0]))
+        elif len(parts) == 2:
+            return TransformTag(accel=float(parts[0]), to=Tags.parse(parts[1]))
+        elif len(parts) == 3:
+            return TransformTag(start=timedelta(milliseconds=int(parts[0])), end=timedelta(milliseconds=int(parts[1])), to=Tags.parse(parts[2]))
+        elif len(parts) == 4:
+            return TransformTag(start=timedelta(milliseconds=int(parts[0])), end=timedelta(milliseconds=int(parts[1])), accel=float(parts[2]), to=Tags.parse(parts[3]))
+        else:
+            raise ValueError
 
     def __str__(self) -> str:
-        return self.startState + ''.join([str(transformation) for transformation in self.transformations])
+        if self.accel == 1.0 and not self.start and not self.end:
+            return rf'\t({self.to})'
+        elif not self.start and not self.end:
+            return rf'\t({self.accel},{self.to})'
+        elif self.accel == 1.0:
+            return rf'\t({self.start.total_milliseconds()},{self.end.total_milliseconds()},{self.to})'
+        else:
+            return rf'\t({self.start.total_milliseconds()},{self.end.total_milliseconds()},{self.accel},{self.to})'
 
 @dataclass
 class BlurEdgesTag(Tag):
