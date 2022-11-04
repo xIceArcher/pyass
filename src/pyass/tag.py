@@ -106,7 +106,7 @@ class StrTag(Tag):
     @classmethod
     def _parse(cls: type[StrTag], prefix: str, rest: str) -> Tag:
         super()._parse(prefix, rest)
-        return cls(_text=rest)
+        return cls(rest)
 
     def __str__(self) -> str:
         return f'{self.prefixes()[0]}{self._text}'
@@ -118,25 +118,22 @@ class IntTag(Tag):
     @classmethod
     def _parse(cls: type[IntTag], prefix: str, rest: str) -> Tag:
         super()._parse(prefix, rest)
-        return cls(_val=int(rest))
+        return cls(int(rest))
 
     def __str__(self) -> str:
         return f'{self.prefixes()[0]}{self._val}'
 
 @dataclass
 class FloatTag(Tag):
-    _val: _float = _float(0.0)
-
-    def __init__(self, val: float):
-        self._val = _float(val)
+    _val: float = 0.0
 
     @classmethod
     def _parse(cls: type[FloatTag], prefix: str, rest: str) -> Tag:
         super()._parse(prefix, rest)
-        return cls(val=_float(rest))
+        return cls(float(rest))
 
     def __str__(self) -> str:
-        return f'{self.prefixes()[0]}{self._val}'
+        return f'{self.prefixes()[0]}{_float(self._val)}'
 
 @dataclass
 class ClipTag(Tag):
@@ -214,11 +211,7 @@ class StrikeoutTag(BoolTag):
 @dataclass
 class BorderSizeTag(Tag):
     dimension: Dimension2D = Dimension2D.BOTH
-    size: _float = _float(0.0)
-
-    def __init__(self, dimension: Dimension2D = Dimension2D.BOTH, size: float = 0.0):
-        self.dimension = dimension
-        self.size = _float(size)
+    size: float = 0.0
 
     @staticmethod
     def prefixes() -> list[str]:
@@ -238,16 +231,12 @@ class BorderSizeTag(Tag):
             raise ValueError
 
     def __str__(self) -> str:
-        return f'\\{self.dimension.value}bord{self.size}'
+        return f'\\{self.dimension.value}bord{_float(self.size)}'
 
 @dataclass
 class ShadowDepthTag(Tag):
     dimension: Dimension2D = Dimension2D.BOTH
-    depth: _float = _float(0.0)
-
-    def __init__(self, dimension: Dimension2D = Dimension2D.BOTH, depth: float = 0.0):
-        self.dimension = dimension
-        self.depth = _float(depth)
+    depth: float = 0.0
 
     @staticmethod
     def prefixes() -> list[str]:
@@ -267,16 +256,12 @@ class ShadowDepthTag(Tag):
             raise ValueError
 
     def __str__(self) -> str:
-        return f'\\{self.dimension.value}shad{self.depth}'
+        return f'\\{self.dimension.value}shad{_float(self.depth)}'
 
 @dataclass
 class BlurEdgesTag(Tag):
-    strength: _float = _float(0.0)
+    strength: float = 0.0
     useGaussianBlur: bool = False
-
-    def __init__(self, strength: float = 0.0, useGaussianBlur: bool = False):
-        self.strength = _float(strength)
-        self.useGaussianBlur = useGaussianBlur
 
     @staticmethod
     def prefixes() -> list[str]:
@@ -287,15 +272,15 @@ class BlurEdgesTag(Tag):
         super()._parse(prefix, rest)
 
         if prefix == r'\be':
-            return BlurEdgesTag(_float(rest), useGaussianBlur=False)
+            return BlurEdgesTag(float(rest), useGaussianBlur=False)
         elif prefix == r'\blur':
-            return BlurEdgesTag(_float(rest), useGaussianBlur=True)
+            return BlurEdgesTag(float(rest), useGaussianBlur=True)
         else:
             raise ValueError
 
     def __str__(self) -> str:
         if self.useGaussianBlur:
-            return rf'\blur{self.strength}'
+            return rf'\blur{_float(self.strength)}'
         else:
             return rf'\be{int(round(self.strength))}'
 
@@ -341,11 +326,7 @@ class FontEncodingTag(IntTag):
 @dataclass
 class TextScaleTag(Tag):
     dimension: Dimension2D
-    scale: _float = _float(0.0)
-
-    def __init__(self, dimension: Dimension2D = Dimension2D.BOTH, scale: float = 0.0):
-        self.dimension = dimension
-        self.scale = _float(scale)
+    scale: float = 0.0
 
     @staticmethod
     def prefixes() -> list[str]:
@@ -367,7 +348,7 @@ class TextScaleTag(Tag):
             # Technically there's no such tag
             return str(TextScaleTag(Dimension2D.X, self.scale)) + str(TextScaleTag(Dimension2D.Y, self.scale))
 
-        return f'\\fsc{self.dimension.value}{self.scale}'
+        return f'\\fsc{self.dimension.value}{_float(self.scale)}'
 
 class TextSpacingTag(FloatTag):
     @staticmethod
@@ -380,16 +361,12 @@ class TextSpacingTag(FloatTag):
 
     @spacing.setter
     def spacing(self, f: float):
-        self._val = _float(f)
+        self._val = f
 
 @dataclass
 class TextRotationTag(Tag):
     dimension: Dimension3D
-    degrees: _float = _float(0.0)
-
-    def __init__(self, dimension: Dimension3D, degrees: float = 0.0):
-        self.dimension = dimension
-        self.degrees = _float(degrees)
+    degrees: float = 0.0
 
     @staticmethod
     def prefixes() -> list[str]:
@@ -409,16 +386,12 @@ class TextRotationTag(Tag):
             raise ValueError
 
     def __str__(self) -> str:
-        return f'\\fr{self.dimension.value}{self.degrees}'
+        return f'\\fr{self.dimension.value}{_float(self.degrees)}'
 
 @dataclass
 class TextShearTag(Tag):
     dimension: Dimension2D
-    factor: _float = _float(0.0)
-
-    def __init__(self, dimension: Dimension2D, factor: float = 0.0):
-        self.dimension = dimension
-        self.factor = _float(factor)
+    factor: float = 0.0
 
     @staticmethod
     def prefixes() -> list[str]:
@@ -440,7 +413,7 @@ class TextShearTag(Tag):
             # Technically there's no such tag
             return str(TextShearTag(Dimension2D.X, self.factor)) + str(TextShearTag(Dimension2D.Y, self.factor))
 
-        return f'\\fa{self.dimension.value}{self.factor}'
+        return f'\\fa{self.dimension.value}{_float(self.factor)}'
 
 @dataclass
 class ColorTag(Tag):
