@@ -3,6 +3,7 @@ from typing import TypeVar
 
 from pyass.color import Color
 from pyass.enum import Alignment, BorderStyle
+from pyass.float import _float
 
 Style = TypeVar("Style", bound="Style")
 
@@ -43,11 +44,8 @@ class Style:
         def bool_to_str(v: bool) -> str:
             return '-1' if v else '0'
 
-        def float_to_str(v: float) -> str:
-            return str(int(v)) if v == int(v) else str(v)
-
         # Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-        return f'Style: {self.name},{self.fontName},{self.fontSize},{self.primaryColor},{self.secondaryColor},{self.outlineColor},{self.backColor},{bool_to_str(self.isBold)},{bool_to_str(self.isItalic)},{bool_to_str(self.isUnderline)},{bool_to_str(self.isStrikeout)},{self.scaleX},{self.scaleY},{self.spacing},{float_to_str(self.angle)},{self.borderStyle},{float_to_str(self.outline)},{float_to_str(self.shadow)},{self.alignment},{self.marginL},{self.marginR},{self.marginV},{self.encoding}'
+        return f'Style: {self.name},{self.fontName},{self.fontSize},{self.primaryColor},{self.secondaryColor},{self.outlineColor},{self.backColor},{bool_to_str(self.isBold)},{bool_to_str(self.isItalic)},{bool_to_str(self.isUnderline)},{bool_to_str(self.isStrikeout)},{self.scaleX},{self.scaleY},{self.spacing},{_float(self.angle)},{self.borderStyle},{_float(self.outline)},{_float(self.shadow)},{self.alignment},{self.marginL},{self.marginR},{self.marginV},{self.encoding}'
 
     @staticmethod
     def parse(s: str) -> Style:

@@ -33,7 +33,7 @@ class TestEvent():
                         EventPart(
                             tags=[
                                 KaraokeTag(timedelta(centiseconds=12)),
-                                IFXTag(ifx='abc')
+                                IFXTag('abc')
                             ],
                             text='some text'
                         ),
@@ -51,4 +51,4 @@ class TestEvent():
         ]:
             assert str(o) == s
             assert Event.parse(s) == o
-            assert Event.parse(s).text == s.split(',', 9)[9]
+            assert Event.parse(s).text == s.split(',', 9)[9] # type: ignore

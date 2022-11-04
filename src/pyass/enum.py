@@ -28,3 +28,26 @@ class EventFormat(Enum):
 
     def __str__(self) -> str:
         return str(self.value)
+
+class Dimension2D(Enum):
+    X = 'x'
+    Y = 'y'
+    BOTH = ''
+
+class Channel(Enum):
+    ALL = 0
+    PRIMARY = 1
+    SECONDARY = 2
+    BORDER = 3
+    OUTLINE = 4
+
+class Dimension3D(Enum):
+    X = 'x'
+    Y = 'y'
+    Z = 'z'
+
+class Wrapping(Enum):
+    SMART = 0
+    END_OF_LINE = 1
+    NONE = 2
+    SMART_LONGER_BOTTOM = 3

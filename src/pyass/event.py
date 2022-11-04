@@ -99,7 +99,5 @@ class Event:
 
             # Then try to parse the rest of the line
             self.parts.extend([EventPart(tags=Tags.parse(tagPart), text=textPart) for tagPart, textPart in re.findall(r'\{([^\}]*)\}([^\{]*)', text)])
-        finally:
-            # Sanity check: if parsing failed, give up parsing
-            if self.text != originalText: # type: ignore
-                self.parts = [EventPart(text=text)]
+        except:
+            self.parts = [EventPart(text=originalText)]
