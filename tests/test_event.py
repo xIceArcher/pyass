@@ -51,4 +51,4 @@ class TestEvent():
         ]:
             assert str(o) == s
             assert Event.parse(s) == o
-            assert Event.parse(s).text == s.split(',', 9)[9] # type: ignore
+            assert Event.parse(s).text == s.split(',', 9)[9]

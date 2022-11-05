@@ -1,7 +1,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TypeVar
+from typing import Sequence, TypeVar
 
 from pyass.event import Event
 from pyass.style import Style
@@ -25,7 +25,7 @@ class Section(ABC):
 
     @staticmethod
     @abstractmethod
-    def _parse(header: str, lines: list[str]) -> Section:
+    def _parse(header: str, lines: Sequence[str]) -> Section:
         raise NotImplementedError
 
     @abstractmethod
@@ -51,8 +51,8 @@ class UnknownSection(Section):
         return self.actualHeader
 
     @staticmethod
-    def _parse(header: str, lines: list[str]) -> Section:
-        return UnknownSection(header, lines)
+    def _parse(header: str, lines: Sequence[str]) -> Section:
+        return UnknownSection(header, list(lines))
 
     def clear(self) -> None:
         self.lines.clear()
@@ -82,7 +82,7 @@ class ScriptInfoSection(list[tuple[str, str]], Section):
         return 'Script Info'
 
     @staticmethod
-    def _parse(header: str, lines: list[str]) -> Section:
+    def _parse(header: str, lines: Sequence[str]) -> Section:
         if header != ScriptInfoSection.header():
             return UnknownSection._parse(header, lines)
 
@@ -95,13 +95,14 @@ class ScriptInfoSection(list[tuple[str, str]], Section):
                 ret.append(('', line.removeprefix(';').strip()))
             else:
                 try:
-                    k, v = line.split(':')
+                    k, v = line.split(':', 1)
                     ret.append((k.strip(), v.strip()))
                 except:
                     # Malformed line, put everything into key
                     ret.append((line, ''))
 
         return ret
+
 class AegisubGarbageSection(list[tuple[str, str]], Section):
     def __str__(self) -> str:
         return '\n'.join([
@@ -114,14 +115,14 @@ class AegisubGarbageSection(list[tuple[str, str]], Section):
         return 'Aegisub Project Garbage'
 
     @staticmethod
-    def _parse(header: str, lines: list[str]) -> Section:
+    def _parse(header: str, lines: Sequence[str]) -> Section:
         if header != AegisubGarbageSection.header():
             return UnknownSection._parse(header, lines)
 
         ret = AegisubGarbageSection()
         for line in lines:
             try:
-                k, v = line.split(':')
+                k, v = line.split(':', 1)
                 ret.append((k.strip(), v.strip()))
             except:
                 # Malformed line, put everything into key
@@ -145,7 +146,7 @@ class StylesSection(list[Style], Section):
         return 'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding'
 
     @staticmethod
-    def _parse(header: str, lines: list[str]) -> Section:
+    def _parse(header: str, lines: Sequence[str]) -> Section:
         if header != StylesSection.header():
             return UnknownSection._parse(header, lines)
 
@@ -174,7 +175,7 @@ class EventsSection(list[Event], Section):
         return 'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text'
 
     @staticmethod
-    def _parse(header: str, lines: list[str]) -> Section:
+    def _parse(header: str, lines: Sequence[str]) -> Section:
         if header != EventsSection.header():
             return UnknownSection._parse(header, lines)
 

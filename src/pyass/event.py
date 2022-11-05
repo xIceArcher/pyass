@@ -1,10 +1,12 @@
 import re
-from dataclasses import InitVar, dataclass, field
-from typing import TypeVar
+from dataclasses import dataclass
+from datetime import timedelta
+from typing import TypeVar, Sequence
+import typing
 
+import pyass
 from pyass.enum import EventFormat
 from pyass.tag import Tag, Tags
-from pyass.timedelta import timedelta
 
 
 @dataclass
@@ -12,7 +14,7 @@ class EventPart:
     tags: Tags
     text: str
 
-    def __init__(self, tags: list[Tag] = [], text: str = ''):
+    def __init__(self, tags: Sequence[Tag] = [], text: str = ''):
         self.tags = Tags(tags)
         self.text = text
 
@@ -23,32 +25,34 @@ Event = TypeVar("Event", bound="Event")
 
 @dataclass
 class Event:
-    format: EventFormat = EventFormat.DIALOGUE
-    layer: int = 0
-    start: timedelta = timedelta()
-    end: timedelta = timedelta()
-    style: str = 'Default'
-    name: str = ''
-    marginL: int = 0
-    marginR: int = 0
-    marginV: int = 0
-    effect: str = ''
-    parts: list[EventPart] = field(default_factory=list)
-    text: InitVar[str] = '' # type: ignore
-    _unknownRawText: str = field(init=False)
+    def __init__(self, format: EventFormat = EventFormat.DIALOGUE, layer: int = 0, start: timedelta = timedelta(), end: timedelta = timedelta(), style: str = 'Default', name: str = '', marginL: int = 0, marginR: int = 0, marginV: int = 0, effect: str = '', parts: Sequence[EventPart] = [], text: str = ''):
+        # Cannot specify both at the same time
+        if parts and text:
+            raise ValueError
 
-    def __post_init__(self, text):
-        self._unknownRawText = ''
+        self.format = format
+        self.layer = layer
+        self.start = start
+        self.end = end
+        self.style = style
+        self.name = name
+        self.marginL = marginL
+        self.marginR = marginR
+        self.marginV = marginV
+        self.effect = effect
+        self.parts = parts
 
-        if type(text) is not property:
+        if text:
             self._set_parts_from_text(text)
+
+        self._unknownRawText = ''
 
     def __str__(self) -> str:
         if self._unknownRawText:
             return self._unknownRawText
 
         # Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-        return f'{self.format}: {self.layer},{self.start},{self.end},{self.style},{self.name},{self.marginL},{self.marginR},{self.marginV},{self.effect},{self.text}'  # type: ignore
+        return f'{self.format}: {self.layer},{pyass.timedelta(self.start)},{pyass.timedelta(self.end)},{self.style},{self.name},{self.marginL},{self.marginR},{self.marginV},{self.effect},{self.text}'
 
     @property
     def text(self) -> str:
@@ -57,6 +61,10 @@ class Event:
     @text.setter
     def text(self, text: str) -> None:
         self._set_parts_from_text(text)
+
+    @property
+    def length(self) -> timedelta:
+        return self.end - self.start
 
     @staticmethod
     def parse(s: str) -> Event:
@@ -68,9 +76,9 @@ class Event:
                 raise ValueError
             ret.format = EventFormat(formatStr)
 
-            layerStr, startStr, endStr, ret.style, ret.name, marginLStr, marginRStr, marginVStr, ret.effect, ret.text = rest.strip().split(',', 9) # type: ignore
+            layerStr, startStr, endStr, ret.style, ret.name, marginLStr, marginRStr, marginVStr, ret.effect, ret.text = rest.strip().split(',', 9)
             ret.layer, ret.marginL, ret.marginR, ret.marginV = map(int, [layerStr, marginLStr, marginRStr, marginVStr])
-            ret.start, ret.end = map(timedelta.parse, [startStr, endStr])
+            ret.start, ret.end = map(pyass.timedelta.parse, [startStr, endStr])
         except:
             ret._unknownRawText = s
 

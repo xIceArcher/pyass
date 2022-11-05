@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TypeVar
+from typing import Sequence, TypeVar
 
 from pyass.event import Event
 from pyass.section import (AegisubGarbageSection, EventsSection,
@@ -12,7 +12,7 @@ Script = TypeVar("Script", bound="Script")
 class Script:
     sections: list[Section]
 
-    def __init__(self, scriptInfo: list[tuple[str, str]] = [], aegisubGarbage: list[tuple[str, str]] = [], styles: list[Style] = [], events: list[Event] = []):
+    def __init__(self, scriptInfo: Sequence[tuple[str, str]] = [], aegisubGarbage: Sequence[tuple[str, str]] = [], styles: Sequence[Style] = [], events: Sequence[Event] = []):
         self.sections = []
 
         self.sections.append(ScriptInfoSection(scriptInfo))
@@ -50,21 +50,45 @@ class Script:
     def scriptInfo(self) -> ScriptInfoSection:
         return self._get_section_by_header(ScriptInfoSection.header()) # type: ignore
 
+    @scriptInfo.setter
+    def scriptInfo(self, s: Sequence[tuple[str, str]]):
+        self._set_section_by_header(ScriptInfoSection.header(), ScriptInfoSection(s))
+
     @property
     def aegisubGarbage(self) -> AegisubGarbageSection:
         return self._get_section_by_header(AegisubGarbageSection.header()) # type: ignore
+
+    @aegisubGarbage.setter
+    def aegisubGarbage(self, s: Sequence[tuple[str, str]]):
+        self._set_section_by_header(AegisubGarbageSection.header(), AegisubGarbageSection(s))
 
     @property
     def styles(self) -> StylesSection:
         return self._get_section_by_header(StylesSection.header()) # type: ignore
 
+    @styles.setter
+    def styles(self, s: Sequence[Style]):
+        self._set_section_by_header(StylesSection.header(), StylesSection(s))
+
     @property
-    def events(self) -> StylesSection:
+    def events(self) -> EventsSection:
         return self._get_section_by_header(EventsSection.header()) # type: ignore
 
-    def _get_section_by_header(self, header) -> Section:
+    @events.setter
+    def events(self, s: Sequence[Event]):
+        self._set_section_by_header(EventsSection.header(), EventsSection(s))
+
+    def _get_section_by_header(self, header: str) -> Section:
         for section in self.sections:
             if section.header() == header:
                 return section
+
+        raise AttributeError
+
+    def _set_section_by_header(self, header: str, s: Section):
+        for i, section in enumerate(self.sections):
+            if section.header() == header:
+                self.sections[i] = s
+                return
 
         raise AttributeError
