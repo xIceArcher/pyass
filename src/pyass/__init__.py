@@ -28,7 +28,7 @@ def loads(s: str) -> Script:
     return Script.parse(s)
 
 def dump(o: Script, fp: _typing.TextIO) -> None:
-    fp.write(dumps(o))
+    o.dump(fp)
 
 def dumps(o: Script) -> str:
-    return str(o)
+    return o.dumps()

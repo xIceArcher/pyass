@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Sequence, TypeVar
+from typing import Sequence, TypeVar, TextIO
 
 from pyass.event import Event
 from pyass.section import (AegisubGarbageSection, EventsSection,
@@ -77,6 +77,12 @@ class Script:
     @events.setter
     def events(self, s: Sequence[Event]):
         self._set_section_by_header(EventsSection.header(), EventsSection(s))
+
+    def dump(self, fp: TextIO) -> None:
+        fp.write(self.dumps())
+
+    def dumps(self) -> str:
+        return str(self)
 
     def _get_section_by_header(self, header: str) -> Section:
         for section in self.sections:
