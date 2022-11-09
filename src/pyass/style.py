@@ -12,10 +12,10 @@ class Style:
     name: str = 'Default'
     fontName: str = 'Arial'
     fontSize: int = 48
-    primaryColor: Color = Color(r=0xFF, g=0xFF, b=0xFF, a=0x00)
-    secondaryColor: Color = Color(r=0xFF, g=0x00, b=0x00, a=0x00)
-    outlineColor: Color = Color(r=0x00, g=0x00, b=0x00, a=0x00)
-    backColor: Color = Color(r=0x00, g=0x00, b=0x00, a=0x00)
+    primaryColor: Color = field(default_factory=lambda: Color(r=0xFF, g=0xFF, b=0xFF, a=0x00))
+    secondaryColor: Color = field(default_factory=lambda: Color(r=0xFF, g=0x00, b=0x00, a=0x00))
+    outlineColor: Color = field(default_factory=lambda: Color(r=0x00, g=0x00, b=0x00, a=0x00))
+    backColor: Color = field(default_factory=lambda: Color(r=0x00, g=0x00, b=0x00, a=0x00))
     isBold: bool = False
     isItalic: bool = False
     isUnderline: bool = False
