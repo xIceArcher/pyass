@@ -3,6 +3,7 @@ from typing import TypeVar
 
 Color = TypeVar("Color", bound="Color")
 
+
 @dataclass
 class Color:
     r: int = 0x00
@@ -11,14 +12,14 @@ class Color:
     a: int = 0x00
 
     def __str__(self) -> str:
-        return f'&H{self.a:02X}{self.b:02X}{self.g:02X}{self.r:02X}'
+        return f"&H{self.a:02X}{self.b:02X}{self.g:02X}{self.r:02X}"
 
     @staticmethod
     def parse(s: str) -> Color:
-        if not s.startswith('&H'):
+        if not s.startswith("&H"):
             raise ValueError
 
-        s = s.removesuffix('&')
+        s = s.removesuffix("&")
 
         if len(s) == 8:
             b = int(s[2:4], 16)

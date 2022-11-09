@@ -15,6 +15,7 @@ class Alignment(Enum):
     def __str__(self) -> str:
         return str(self.value)
 
+
 class BorderStyle(Enum):
     BORDER_STYLE_OUTLINE_DROP_SHADOW = 1
     BORDER_STYLE_OPAQUE_BOX = 3
@@ -22,17 +23,20 @@ class BorderStyle(Enum):
     def __str__(self) -> str:
         return str(self.value)
 
+
 class EventFormat(Enum):
-    DIALOGUE = 'Dialogue'
-    COMMENT = 'Comment'
+    DIALOGUE = "Dialogue"
+    COMMENT = "Comment"
 
     def __str__(self) -> str:
         return str(self.value)
 
+
 class Dimension2D(Enum):
-    X = 'x'
-    Y = 'y'
-    BOTH = ''
+    X = "x"
+    Y = "y"
+    BOTH = ""
+
 
 class Channel(Enum):
     ALL = 0
@@ -41,10 +45,12 @@ class Channel(Enum):
     BORDER = 3
     OUTLINE = 4
 
+
 class Dimension3D(Enum):
-    X = 'x'
-    Y = 'y'
-    Z = 'z'
+    X = "x"
+    Y = "y"
+    Z = "z"
+
 
 class Wrapping(Enum):
     SMART = 0
