@@ -69,6 +69,18 @@ class TestEvent:
             (
                 Event(
                     parts=[
+                        EventPart(text="text"),
+                        EventPart(
+                            tags=[BlurEdgesTag(10), AlignmentTag(Alignment.CENTER)],
+                            text="more text",
+                        ),
+                    ]
+                ),
+                r"Dialogue: 0,0:00:00.00,0:00:00.00,Default,,0,0,0,,text{\be10\an5}more text",
+            ),
+            (
+                Event(
+                    parts=[
                         EventPart(tags=[BlurEdgesTag(10)], text="text"),
                         EventPart(tags=[BlurEdgesTag(20)], text="more text"),
                     ]
