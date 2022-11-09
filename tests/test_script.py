@@ -167,3 +167,15 @@ class TestScript:
                 assert script.aegisubGarbage == o.aegisubGarbage
             except AttributeError:
                 pass
+
+            o.scriptInfo.clear()
+            o.styles.clear()
+            o.events.clear()
+
+            script.scriptInfo = o.scriptInfo
+            script.styles = o.styles
+            script.events = o.events
+
+            assert script.scriptInfo == o.scriptInfo
+            assert script.styles == o.styles
+            assert script.events == o.events
