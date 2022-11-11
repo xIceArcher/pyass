@@ -1,0 +1,33 @@
+[tool.pytest.ini_options]
+pythonpath = [
+  ".",
+]
+addopts = [
+    "--import-mode=importlib",
+]
+
+[tool.isort]
+profile = "black"
+
+[tool.poetry]
+name = "pyass"
+version = "0.1.0"
+description = "A library to read, manipulate, and write Advanced SubStation Alpha (.ass) files"
+authors = ["xIceArcher <xicearcher@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/xIceArcher/pyass"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.0"
+black = "^22.10.0"
+pyright = "^1.1.279"
+isort = "^5.10.1"
+pytest-cov = "^4.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
