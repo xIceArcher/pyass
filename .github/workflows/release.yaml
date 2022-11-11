@@ -1,8 +1,7 @@
-name: Lint and test project
+name: Release project
 
 on:
-  push:
-  pull_request:
+  release:
   workflow_dispatch:
 
 jobs:
@@ -28,3 +27,20 @@ jobs:
           cache: poetry
       - run: poetry install --no-interaction
       - run: make test
+  release:
+    runs-on: ubuntu-latest
+    needs:
+      - lint
+      - test
+    steps:
+      - uses: actions/checkout@v3
+      - run: pipx install poetry
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          cache: poetry
+      - run: poetry install --no-interaction
+      - run: poetry build
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
