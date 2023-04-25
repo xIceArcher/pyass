@@ -11,7 +11,7 @@ profile = "black"
 
 [tool.poetry]
 name = "pyass"
-version = "0.1.0"
+version = "0.1.1"
 description = "A library to read, manipulate, and write Advanced SubStation Alpha (.ass) files"
 authors = ["xIceArcher <xicearcher@gmail.com>"]
 license = "MIT"
