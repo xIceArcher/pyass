@@ -1,4 +1,5 @@
 import re
+import threading
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Sequence, TypeVar
@@ -55,10 +56,13 @@ class Event:
         self.marginR = marginR
         self.marginV = marginV
         self.effect = effect
-        self.parts = parts
+        self._parts = parts
+
+        self._textParseLock = threading.Lock()
+        self._unparsedText = ""
 
         if text:
-            self._set_parts_from_text(text)
+            self.text = text
 
         self._unknownRawText = ""
 
@@ -71,11 +75,33 @@ class Event:
 
     @property
     def text(self) -> str:
-        return "".join([str(part) for part in self.parts])
+        with self._textParseLock:
+            if self._unparsedText:
+                return self._unparsedText
+
+        return "".join([str(part) for part in self._parts])
 
     @text.setter
     def text(self, text: str) -> None:
-        self._set_parts_from_text(text)
+        with self._textParseLock:
+            self._unparsedText = text
+
+    @property
+    def parts(self) -> Sequence[EventPart]:
+        with self._textParseLock:
+            if not self._unparsedText:
+                return self._parts
+
+            self._set_parts_from_text(self._unparsedText)
+            self._unparsedText = ""
+
+        return self._parts
+
+    @parts.setter
+    def parts(self, parts: Sequence[EventPart]) -> None:
+        with self._textParseLock:
+            self._parts = parts
+            self._unparsedText = ""
 
     @property
     def length(self) -> timedelta:
@@ -115,30 +141,30 @@ class Event:
     def _set_parts_from_text(self, text: str) -> None:
         # Short-circuit for empty string
         if not text:
-            self.parts = []
+            self._parts = []
             return
 
         # Short-circuit for text with no tags
         if "{" not in text or "}" not in text:
-            self.parts = [EventPart(text=text)]
+            self._parts = [EventPart(text=text)]
             return
 
         originalText = text
         try:
-            self.parts = []
+            self._parts = []
 
             if not text.startswith("{"):
                 # Consume everything up to the first {
                 tagStartIdx = text.index("{")
-                self.parts.append(EventPart(text=text[:tagStartIdx]))
+                self._parts.append(EventPart(text=text[:tagStartIdx]))
                 text = text[tagStartIdx:]
 
             # Then try to parse the rest of the line
-            self.parts.extend(
+            self._parts.extend(
                 [
                     EventPart(tags=Tags.parse(tagPart), text=textPart)
                     for tagPart, textPart in re.findall(r"\{([^\}]*)\}([^\{]*)", text)
                 ]
             )
         except:
-            self.parts = [EventPart(text=originalText)]
+            self._parts = [EventPart(text=originalText)]
