@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Sequence, TextIO, TypeVar
+from typing import IO, Sequence, TypeVar
 
 from pyass.event import Event
 from pyass.section import (
@@ -107,7 +107,7 @@ class Script:
     def events(self, s: Sequence[Event]):
         self._set_section(EventsSection(s))
 
-    def dump(self, fp: TextIO) -> None:
+    def dump(self, fp: IO[str]) -> None:
         fp.write(self.dumps())
 
     def dumps(self) -> str:
