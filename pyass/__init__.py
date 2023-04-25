@@ -61,7 +61,7 @@ from .tag import (
 from .timedelta import timedelta
 
 
-def load(fp: _typing.TextIO) -> Script:
+def load(fp: _typing.IO[str]) -> Script:
     return loads(fp.read())
 
 
@@ -69,7 +69,7 @@ def loads(s: str) -> Script:
     return Script.parse(s)
 
 
-def dump(o: Script, fp: _typing.TextIO) -> None:
+def dump(o: Script, fp: _typing.IO[str]) -> None:
     o.dump(fp)
 
 
