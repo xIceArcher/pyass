@@ -34,19 +34,28 @@ class timedelta(datetime.timedelta):
 
     @staticmethod
     def parse(s: str):
+        is_neg = s.startswith("-")
+        s = s.removeprefix("-")
+
         s_str, _, cs_str = s.partition(".")
         hrs, mins, secs = map(int, s_str.split(":"))
         cs = int(cs_str)
 
-        return timedelta(hours=hrs, minutes=mins, seconds=secs, centiseconds=cs)
+        td = timedelta(hours=hrs, minutes=mins, seconds=secs, centiseconds=cs)
+        return -td if is_neg else td
 
     def __str__(self) -> str:
-        hours, remainder = self.total_seconds() // 3600, self.total_seconds() % 3600
+        is_neg = self.total_seconds() < 0
+        td = -self if is_neg else self
+
+        hours, remainder = td.total_seconds() // 3600, td.total_seconds() % 3600
         minutes, seconds = remainder // 60, remainder % 60
 
-        return "{:01}:{:02}:{:02}.{:02}".format(
-            int(hours), int(minutes), int(seconds), int(self.microseconds // 10000)
+        s = "{:01}:{:02}:{:02}.{:02}".format(
+            int(hours), int(minutes), int(seconds), int(td.microseconds // 10000)
         )
+
+        return "-" + s if is_neg else s
 
     def __add__(self, other):
         result = super(timedelta, self).__add__(other)

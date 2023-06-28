@@ -16,6 +16,17 @@ class TestTimedelta:
                 timedelta(hours=1, minutes=23, seconds=45, milliseconds=670),
                 "1:23:45.67",
             ),
+            (-timedelta(milliseconds=120), "-0:00:00.12"),
+            (-timedelta(centiseconds=12), "-0:00:00.12"),
+            (-timedelta(seconds=12), "-0:00:12.00"),
+            (-timedelta(minutes=12), "-0:12:00.00"),
+            (-timedelta(milliseconds=1220), "-0:00:01.22"),
+            (-timedelta(seconds=122), "-0:02:02.00"),
+            (-timedelta(minutes=122), "-2:02:00.00"),
+            (
+                -timedelta(hours=1, minutes=23, seconds=45, milliseconds=670),
+                "-1:23:45.67",
+            ),
         ]:
             assert str(o) == s
             assert timedelta.parse(s) == o
