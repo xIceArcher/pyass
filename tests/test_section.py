@@ -187,3 +187,23 @@ class TestSection:
         ]:
             assert str(o) == s
             assert Section.parse(s) == o
+
+    def test_unknown_section(self):
+        for o, s in [
+            (
+                UnknownSection(
+                    actualHeader="Aegisub Extradata",
+                    lines=[
+                        """Data: 18,a-mo,e{"uuid"#3A"3c062348-7eb8-498a-b95d-52e4bba67b75"#2C"originalText"#3A"{\\alpha&HFF&\\t(0#2C412#2C1.5#2C\\alpha&H00&)\\t(2881#2C3130#2C0.7#2C\\alpha&HFF&)}{\\clip(657#2C407#2C1256#2C409)}{\\c&H0696B0&}{\\pos(960#2C432)}{\\bord0\\shad0\\blur0.6}Announcements"}"""
+                    ],
+                ),
+                textwrap.dedent(
+                    """\
+                [Aegisub Extradata]
+                Data: 18,a-mo,e{"uuid"#3A"3c062348-7eb8-498a-b95d-52e4bba67b75"#2C"originalText"#3A"{\\alpha&HFF&\\t(0#2C412#2C1.5#2C\\alpha&H00&)\\t(2881#2C3130#2C0.7#2C\\alpha&HFF&)}{\\clip(657#2C407#2C1256#2C409)}{\\c&H0696B0&}{\\pos(960#2C432)}{\\bord0\\shad0\\blur0.6}Announcements"}
+                """
+                ),
+            ),
+        ]:
+            assert str(o) == s
+            assert Section.parse(s) == o

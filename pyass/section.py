@@ -21,7 +21,7 @@ class Section(ABC):
             if header == SectionType.header():
                 return SectionType._parse(header, lines[1:])
 
-        return UnknownSection._parse(header, lines)
+        return UnknownSection._parse(header, lines[1:])
 
     @staticmethod
     @abstractmethod
