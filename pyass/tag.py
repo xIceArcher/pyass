@@ -5,12 +5,12 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Optional, TypeVar, overload
 
-import pyass
 from pyass.color import Color
 from pyass.drawing import DrawingCommand
 from pyass.enum import Alignment, Channel, Dimension2D, Dimension3D, Wrapping
 from pyass.float import _float
 from pyass.position import Position
+from pyass.timedelta import timedelta as pyasstimedelta
 
 Tag = TypeVar("Tag", bound="Tag")
 Tags = TypeVar("Tags", bound="Tags")
@@ -651,7 +651,7 @@ class KaraokeTag(Tag):
     def __str__(self) -> str:
         return (
             r"\kf" if self.isSlide else r"\k"
-        ) + f"{pyass.timedelta(self.duration).total_centiseconds()}"
+        ) + f"{pyasstimedelta(self.duration).total_centiseconds()}"
 
 
 @dataclass
@@ -766,7 +766,7 @@ class MoveTag(Tag):
 
     def __str__(self) -> str:
         if self.startTime or self.endTime:
-            return f"\\move({self.startPos},{self.endPos},{pyass.timedelta(self.startTime).total_milliseconds()},{pyass.timedelta(self.endTime).total_milliseconds()})"
+            return f"\\move({self.startPos},{self.endPos},{pyasstimedelta(self.startTime).total_milliseconds()},{pyasstimedelta(self.endTime).total_milliseconds()})"
 
         return f"\\move({self.startPos},{self.endPos})"
 
@@ -849,7 +849,7 @@ class FadeTag(Tag):
         )
 
     def __str__(self) -> str:
-        return f"\\fad({pyass.timedelta(self.inDuration).total_milliseconds()},{pyass.timedelta(self.outDuration).total_milliseconds()})"
+        return f"\\fad({pyasstimedelta(self.inDuration).total_milliseconds()},{pyasstimedelta(self.outDuration).total_milliseconds()})"
 
 
 @dataclass
@@ -886,7 +886,7 @@ class ComplexFadeTag(Tag):
         )
 
     def __str__(self) -> str:
-        return f"\\fade({self.a1},{self.a2},{self.a3},{pyass.timedelta(self.t1).total_milliseconds()},{pyass.timedelta(self.t2).total_milliseconds()},{pyass.timedelta(self.t3).total_milliseconds()},{pyass.timedelta(self.t4).total_milliseconds()})"
+        return f"\\fade({self.a1},{self.a2},{self.a3},{pyasstimedelta(self.t1).total_milliseconds()},{pyasstimedelta(self.t2).total_milliseconds()},{pyasstimedelta(self.t3).total_milliseconds()},{pyasstimedelta(self.t4).total_milliseconds()})"
 
 
 @dataclass
@@ -945,11 +945,11 @@ class TransformTag(Tag):
             return f"\\t({self.accel},{self.to})"
         elif self.end is None:
             # Malformed tag
-            return f"\\t({pyass.timedelta(self.start).total_milliseconds()},,{self.to})"
+            return f"\\t({pyasstimedelta(self.start).total_milliseconds()},,{self.to})"
         elif self.accel == 1.0:
-            return f"\\t({pyass.timedelta(self.start).total_milliseconds()},{pyass.timedelta(self.end).total_milliseconds()},{self.to})"
+            return f"\\t({pyasstimedelta(self.start).total_milliseconds()},{pyasstimedelta(self.end).total_milliseconds()},{self.to})"
         else:
-            return f"\\t({pyass.timedelta(self.start).total_milliseconds()},{pyass.timedelta(self.end).total_milliseconds()},{self.accel},{self.to})"
+            return f"\\t({pyasstimedelta(self.start).total_milliseconds()},{pyasstimedelta(self.end).total_milliseconds()},{self.accel},{self.to})"
 
 
 @dataclass

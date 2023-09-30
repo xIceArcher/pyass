@@ -4,9 +4,9 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import Sequence, TypeVar
 
-import pyass
 from pyass.enum import EventFormat
 from pyass.tag import Tag, Tags
+from pyass.timedelta import timedelta as pyasstimedelta
 
 
 @dataclass
@@ -71,7 +71,7 @@ class Event:
             return self._unknownRawText
 
         # Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-        return f"{self.format}: {self.layer},{pyass.timedelta(self.start)},{pyass.timedelta(self.end)},{self.style},{self.name},{self.marginL},{self.marginR},{self.marginV},{self.effect},{self.text}"
+        return f"{self.format}: {self.layer},{pyasstimedelta(self.start)},{pyasstimedelta(self.end)},{self.style},{self.name},{self.marginL},{self.marginR},{self.marginV},{self.effect},{self.text}"
 
     @property
     def text(self) -> str:
@@ -132,7 +132,7 @@ class Event:
             ret.layer, ret.marginL, ret.marginR, ret.marginV = map(
                 int, [layerStr, marginLStr, marginRStr, marginVStr]
             )
-            ret.start, ret.end = map(pyass.timedelta.parse, [startStr, endStr])
+            ret.start, ret.end = map(pyasstimedelta.parse, [startStr, endStr])
         except:
             ret._unknownRawText = s
 
