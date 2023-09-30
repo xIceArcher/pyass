@@ -407,6 +407,7 @@ class TextSpacingTag(FloatTag):
 class TextRotationTag(Tag):
     degrees: float
     dimension: Dimension3D = Dimension3D.Z
+    _useAlternatePrefix: bool = field(init=False, default=False)
 
     @staticmethod
     def prefixes() -> list[str]:
@@ -419,11 +420,17 @@ class TextRotationTag(Tag):
         if prefix == r"\fry":
             return TextRotationTag(float(rest), Dimension3D.Y)
         if prefix == r"\fr" or prefix == r"\frz":
-            return TextRotationTag(float(rest), Dimension3D.Z)
+            ret = TextRotationTag(float(rest), Dimension3D.Z)
+            if prefix == r"\fr":
+                ret._useAlternatePrefix = True
+            return ret
         else:
             raise ValueError
 
     def __str__(self) -> str:
+        if self.dimension == Dimension3D.Z and self._useAlternatePrefix:
+            return f"\\fr{_float(self.degrees)}"
+
         return f"\\fr{self.dimension.value}{_float(self.degrees)}"
 
 
@@ -459,6 +466,7 @@ class TextShearTag(Tag):
 class ColorTag(Tag):
     color: Color
     channel: Channel = Channel.PRIMARY
+    _useAlternatePrefix: bool = field(init=False, default=False)
 
     @overload
     def __init__(self, color: Color, channel: Channel = Channel.PRIMARY, /) -> None:
@@ -499,7 +507,10 @@ class ColorTag(Tag):
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
         if prefix == r"\c" or prefix == r"\1c":
-            return ColorTag(Color.parse(rest), Channel.PRIMARY)
+            ret = ColorTag(Color.parse(rest), Channel.PRIMARY)
+            if prefix == r"\c":
+                ret._useAlternatePrefix = True
+            return ret
         elif prefix == r"\2c":
             return ColorTag(Color.parse(rest), Channel.SECONDARY)
         elif prefix == r"\3c":
@@ -519,6 +530,9 @@ class ColorTag(Tag):
                     if channel != Channel.ALL
                 ]
             )
+
+        if self.channel == Channel.PRIMARY and self._useAlternatePrefix:
+            return f"\\c&H{self.color.b:02X}{self.color.g:02X}{self.color.r:02X}&"
 
         return f"\\{self.channel.value}c&H{self.color.b:02X}{self.color.g:02X}{self.color.r:02X}&"
 
@@ -559,6 +573,7 @@ class AlphaTag(Tag):
 @dataclass
 class AlignmentTag(Tag):
     alignment: Alignment = Alignment.BOTTOM
+    _useAlternatePrefix: bool = field(init=False, default=False)
 
     @staticmethod
     def prefixes() -> list[str]:
@@ -569,7 +584,7 @@ class AlignmentTag(Tag):
         if prefix == r"\an":
             return AlignmentTag(Alignment(int(rest)))
 
-        return AlignmentTag(
+        ret = AlignmentTag(
             Alignment(
                 {
                     1: Alignment.BOTTOM_LEFT,
@@ -585,7 +600,25 @@ class AlignmentTag(Tag):
             )
         )
 
+        ret._useAlternatePrefix = True
+        return ret
+
     def __str__(self) -> str:
+        if self._useAlternatePrefix:
+            values = {
+                Alignment.BOTTOM_LEFT: 1,
+                Alignment.BOTTOM: 2,
+                Alignment.BOTTOM_RIGHT: 3,
+                Alignment.TOP_LEFT: 5,
+                Alignment.TOP: 6,
+                Alignment.TOP_RIGHT: 7,
+                Alignment.CENTER_LEFT: 9,
+                Alignment.CENTER: 10,
+                Alignment.CENTER_RIGHT: 11,
+            }
+
+            return f"\\a{values[self.alignment]}"
+
         return f"\\an{self.alignment.value}"
 
 
@@ -593,6 +626,7 @@ class AlignmentTag(Tag):
 class KaraokeTag(Tag):
     duration: timedelta = timedelta()
     isSlide: bool = True
+    _useAlternatePerefix: bool = field(init=False, default=False)
 
     def __init__(
         self, duration: timedelta | int = timedelta(), isSlide: bool = True
@@ -615,13 +649,18 @@ class KaraokeTag(Tag):
         if prefix == r"\kf":
             return KaraokeTag(duration=timedelta(milliseconds=cs * 10), isSlide=True)
         elif prefix == r"\K":
-            return KaraokeTag(duration=timedelta(milliseconds=cs * 10), isSlide=True)
+            ret = KaraokeTag(duration=timedelta(milliseconds=cs * 10), isSlide=True)
+            ret._useAlternatePerefix = True
+            return ret
         elif prefix == r"\k":
             return KaraokeTag(duration=timedelta(milliseconds=cs * 10), isSlide=False)
         else:
             raise ValueError
 
     def __str__(self) -> str:
+        if self.isSlide and self._useAlternatePerefix:
+            return rf"\K{pyasstimedelta(self.duration).total_centiseconds()}"
+
         return (
             r"\kf" if self.isSlide else r"\k"
         ) + f"{pyasstimedelta(self.duration).total_centiseconds()}"

@@ -250,3 +250,22 @@ class TestTag:
             assert Tag.parse(s) == o, f"Parse {s}"
             assert len(Tags.parse(s)) == 1
             assert Tags.parse(s)[0] == o
+            assert str(Tags.parse(s)[0]) == s
+
+    def test_alternate_prefix_tag(self):
+        for s in [
+            r"\fr100",
+            r"\fr123.4",
+            r"\c&H0000FF&",
+            r"\a1",
+            r"\a2",
+            r"\a3",
+            r"\a5",
+            r"\a6",
+            r"\a7",
+            r"\a9",
+            r"\a10",
+            r"\a11",
+            r"\K100",
+        ]:
+            assert str(Tags.parse(s)[0]) == s
