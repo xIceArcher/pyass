@@ -109,8 +109,6 @@ class BoolTag(Tag):
 
     @classmethod
     def _parse(cls: type[BoolTag], prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         if rest == "1":
             return cls(True)
         elif rest == "0":
@@ -131,7 +129,6 @@ class StrTag(Tag):
 
     @classmethod
     def _parse(cls: type[StrTag], prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
         return cls(rest)
 
     def __str__(self) -> str:
@@ -147,7 +144,6 @@ class IntTag(Tag):
 
     @classmethod
     def _parse(cls: type[IntTag], prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
         return cls(int(rest))
 
     def __str__(self) -> str:
@@ -163,7 +159,6 @@ class FloatTag(Tag):
 
     @classmethod
     def _parse(cls: type[FloatTag], prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
         return cls(float(rest))
 
     def __str__(self) -> str:
@@ -180,8 +175,6 @@ class ClipTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         isInverted = prefix == r"\iclip"
 
         args = rest.removeprefix(r"\t").removeprefix("(").removesuffix(")").split(",")
@@ -264,8 +257,6 @@ class BorderSizeTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         if prefix == r"\bord":
             return BorderSizeTag(float(rest), Dimension2D.BOTH)
         elif prefix == r"\xbord":
@@ -290,8 +281,6 @@ class ShadowDepthTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         if prefix == r"\shad":
             return ShadowDepthTag(float(rest), Dimension2D.BOTH)
         elif prefix == r"\xshad":
@@ -316,8 +305,6 @@ class BlurEdgesTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         if prefix == r"\be":
             return BlurEdgesTag(float(rest), useGaussianBlur=False)
         elif prefix == r"\blur":
@@ -385,8 +372,6 @@ class TextScaleTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         if prefix == r"\fscx":
             return TextScaleTag(float(rest), Dimension2D.X)
         elif prefix == r"\fscy":
@@ -429,8 +414,6 @@ class TextRotationTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         if prefix == r"\frx":
             return TextRotationTag(float(rest), Dimension3D.X)
         if prefix == r"\fry":
@@ -455,8 +438,6 @@ class TextShearTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         if prefix == r"\fax":
             return TextShearTag(float(rest), Dimension2D.X)
         if prefix == r"\fay":
@@ -517,8 +498,6 @@ class ColorTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         if prefix == r"\c" or prefix == r"\1c":
             return ColorTag(Color.parse(rest), Channel.PRIMARY)
         elif prefix == r"\2c":
@@ -555,8 +534,6 @@ class AlphaTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         rest = rest.removeprefix("&H").removesuffix("&")
 
         if prefix == r"\alpha":
@@ -589,8 +566,6 @@ class AlignmentTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         if prefix == r"\an":
             return AlignmentTag(Alignment(int(rest)))
 
@@ -635,8 +610,6 @@ class KaraokeTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         cs = int(round(float(rest)))
 
         if prefix == r"\kf":
@@ -679,7 +652,6 @@ class WrappingStyleTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
         return WrappingStyleTag(Wrapping(int(rest)))
 
     def __str__(self) -> str:
@@ -727,7 +699,6 @@ class PositionTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
         return PositionTag(Position.parse(rest.removeprefix("(").removesuffix(")")))
 
     def __str__(self) -> str:
@@ -747,8 +718,6 @@ class MoveTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         args = rest.removeprefix("(").removesuffix(")").split(",")
         if len(args) == 4:
             startX, startY, endX, endY = map(float, args)
@@ -797,7 +766,6 @@ class RotationTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
         return RotationTag(Position.parse(rest.removeprefix("(").removesuffix(")")))
 
     def __str__(self) -> str:
@@ -840,8 +808,6 @@ class FadeTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         inDuration, outDuration = re.findall(r"\(([0-9]+),([0-9]+)\)", rest)[0]
         return FadeTag(
             timedelta(milliseconds=int(inDuration)),
@@ -868,8 +834,6 @@ class ComplexFadeTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         args = rest.removeprefix("(").removesuffix(")").split(",")
         if len(args) != 7:
             raise ValueError
