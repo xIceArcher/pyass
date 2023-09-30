@@ -1,6 +1,5 @@
 import textwrap
 
-import pyass
 from pyass import *
 
 
@@ -153,11 +152,11 @@ class TestScript:
                 ),
             ),
         ]:
-            assert pyass.dumps(o) == s
+            assert dumps(o) == s
             assert str(o) == s
 
             script = Script.parse(s)
-            assert script == pyass.loads(s)
+            assert script == loads(s)
 
             assert script.scriptInfo == o.scriptInfo
             assert script.styles == o.styles

@@ -5,12 +5,12 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Optional, TypeVar, overload
 
-import pyass
 from pyass.color import Color
 from pyass.drawing import DrawingCommand
 from pyass.enum import Alignment, Channel, Dimension2D, Dimension3D, Wrapping
 from pyass.float import _float
 from pyass.position import Position
+from pyass.timedelta import timedelta as pyasstimedelta
 
 Tag = TypeVar("Tag", bound="Tag")
 Tags = TypeVar("Tags", bound="Tags")
@@ -109,8 +109,6 @@ class BoolTag(Tag):
 
     @classmethod
     def _parse(cls: type[BoolTag], prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         if rest == "1":
             return cls(True)
         elif rest == "0":
@@ -131,7 +129,6 @@ class StrTag(Tag):
 
     @classmethod
     def _parse(cls: type[StrTag], prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
         return cls(rest)
 
     def __str__(self) -> str:
@@ -147,7 +144,6 @@ class IntTag(Tag):
 
     @classmethod
     def _parse(cls: type[IntTag], prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
         return cls(int(rest))
 
     def __str__(self) -> str:
@@ -163,7 +159,6 @@ class FloatTag(Tag):
 
     @classmethod
     def _parse(cls: type[FloatTag], prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
         return cls(float(rest))
 
     def __str__(self) -> str:
@@ -180,8 +175,6 @@ class ClipTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         isInverted = prefix == r"\iclip"
 
         args = rest.removeprefix(r"\t").removeprefix("(").removesuffix(")").split(",")
@@ -264,8 +257,6 @@ class BorderSizeTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         if prefix == r"\bord":
             return BorderSizeTag(float(rest), Dimension2D.BOTH)
         elif prefix == r"\xbord":
@@ -290,8 +281,6 @@ class ShadowDepthTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         if prefix == r"\shad":
             return ShadowDepthTag(float(rest), Dimension2D.BOTH)
         elif prefix == r"\xshad":
@@ -316,8 +305,6 @@ class BlurEdgesTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         if prefix == r"\be":
             return BlurEdgesTag(float(rest), useGaussianBlur=False)
         elif prefix == r"\blur":
@@ -385,8 +372,6 @@ class TextScaleTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         if prefix == r"\fscx":
             return TextScaleTag(float(rest), Dimension2D.X)
         elif prefix == r"\fscy":
@@ -422,6 +407,7 @@ class TextSpacingTag(FloatTag):
 class TextRotationTag(Tag):
     degrees: float
     dimension: Dimension3D = Dimension3D.Z
+    _useAlternatePrefix: bool = field(init=False, default=False)
 
     @staticmethod
     def prefixes() -> list[str]:
@@ -429,18 +415,22 @@ class TextRotationTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         if prefix == r"\frx":
             return TextRotationTag(float(rest), Dimension3D.X)
         if prefix == r"\fry":
             return TextRotationTag(float(rest), Dimension3D.Y)
         if prefix == r"\fr" or prefix == r"\frz":
-            return TextRotationTag(float(rest), Dimension3D.Z)
+            ret = TextRotationTag(float(rest), Dimension3D.Z)
+            if prefix == r"\fr":
+                ret._useAlternatePrefix = True
+            return ret
         else:
             raise ValueError
 
     def __str__(self) -> str:
+        if self.dimension == Dimension3D.Z and self._useAlternatePrefix:
+            return f"\\fr{_float(self.degrees)}"
+
         return f"\\fr{self.dimension.value}{_float(self.degrees)}"
 
 
@@ -455,8 +445,6 @@ class TextShearTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         if prefix == r"\fax":
             return TextShearTag(float(rest), Dimension2D.X)
         if prefix == r"\fay":
@@ -478,6 +466,7 @@ class TextShearTag(Tag):
 class ColorTag(Tag):
     color: Color
     channel: Channel = Channel.PRIMARY
+    _useAlternatePrefix: bool = field(init=False, default=False)
 
     @overload
     def __init__(self, color: Color, channel: Channel = Channel.PRIMARY, /) -> None:
@@ -517,10 +506,11 @@ class ColorTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         if prefix == r"\c" or prefix == r"\1c":
-            return ColorTag(Color.parse(rest), Channel.PRIMARY)
+            ret = ColorTag(Color.parse(rest), Channel.PRIMARY)
+            if prefix == r"\c":
+                ret._useAlternatePrefix = True
+            return ret
         elif prefix == r"\2c":
             return ColorTag(Color.parse(rest), Channel.SECONDARY)
         elif prefix == r"\3c":
@@ -541,6 +531,9 @@ class ColorTag(Tag):
                 ]
             )
 
+        if self.channel == Channel.PRIMARY and self._useAlternatePrefix:
+            return f"\\c&H{self.color.b:02X}{self.color.g:02X}{self.color.r:02X}&"
+
         return f"\\{self.channel.value}c&H{self.color.b:02X}{self.color.g:02X}{self.color.r:02X}&"
 
 
@@ -555,8 +548,6 @@ class AlphaTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         rest = rest.removeprefix("&H").removesuffix("&")
 
         if prefix == r"\alpha":
@@ -582,6 +573,7 @@ class AlphaTag(Tag):
 @dataclass
 class AlignmentTag(Tag):
     alignment: Alignment = Alignment.BOTTOM
+    _useAlternatePrefix: bool = field(init=False, default=False)
 
     @staticmethod
     def prefixes() -> list[str]:
@@ -589,12 +581,10 @@ class AlignmentTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         if prefix == r"\an":
             return AlignmentTag(Alignment(int(rest)))
 
-        return AlignmentTag(
+        ret = AlignmentTag(
             Alignment(
                 {
                     1: Alignment.BOTTOM_LEFT,
@@ -610,7 +600,25 @@ class AlignmentTag(Tag):
             )
         )
 
+        ret._useAlternatePrefix = True
+        return ret
+
     def __str__(self) -> str:
+        if self._useAlternatePrefix:
+            values = {
+                Alignment.BOTTOM_LEFT: 1,
+                Alignment.BOTTOM: 2,
+                Alignment.BOTTOM_RIGHT: 3,
+                Alignment.TOP_LEFT: 5,
+                Alignment.TOP: 6,
+                Alignment.TOP_RIGHT: 7,
+                Alignment.CENTER_LEFT: 9,
+                Alignment.CENTER: 10,
+                Alignment.CENTER_RIGHT: 11,
+            }
+
+            return f"\\a{values[self.alignment]}"
+
         return f"\\an{self.alignment.value}"
 
 
@@ -618,6 +626,7 @@ class AlignmentTag(Tag):
 class KaraokeTag(Tag):
     duration: timedelta = timedelta()
     isSlide: bool = True
+    _useAlternatePerefix: bool = field(init=False, default=False)
 
     def __init__(
         self, duration: timedelta | int = timedelta(), isSlide: bool = True
@@ -635,23 +644,26 @@ class KaraokeTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         cs = int(round(float(rest)))
 
         if prefix == r"\kf":
             return KaraokeTag(duration=timedelta(milliseconds=cs * 10), isSlide=True)
         elif prefix == r"\K":
-            return KaraokeTag(duration=timedelta(milliseconds=cs * 10), isSlide=True)
+            ret = KaraokeTag(duration=timedelta(milliseconds=cs * 10), isSlide=True)
+            ret._useAlternatePerefix = True
+            return ret
         elif prefix == r"\k":
             return KaraokeTag(duration=timedelta(milliseconds=cs * 10), isSlide=False)
         else:
             raise ValueError
 
     def __str__(self) -> str:
+        if self.isSlide and self._useAlternatePerefix:
+            return rf"\K{pyasstimedelta(self.duration).total_centiseconds()}"
+
         return (
             r"\kf" if self.isSlide else r"\k"
-        ) + f"{pyass.timedelta(self.duration).total_centiseconds()}"
+        ) + f"{pyasstimedelta(self.duration).total_centiseconds()}"
 
 
 @dataclass
@@ -679,7 +691,6 @@ class WrappingStyleTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
         return WrappingStyleTag(Wrapping(int(rest)))
 
     def __str__(self) -> str:
@@ -727,7 +738,6 @@ class PositionTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
         return PositionTag(Position.parse(rest.removeprefix("(").removesuffix(")")))
 
     def __str__(self) -> str:
@@ -747,8 +757,6 @@ class MoveTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         args = rest.removeprefix("(").removesuffix(")").split(",")
         if len(args) == 4:
             startX, startY, endX, endY = map(float, args)
@@ -766,7 +774,7 @@ class MoveTag(Tag):
 
     def __str__(self) -> str:
         if self.startTime or self.endTime:
-            return f"\\move({self.startPos},{self.endPos},{pyass.timedelta(self.startTime).total_milliseconds()},{pyass.timedelta(self.endTime).total_milliseconds()})"
+            return f"\\move({self.startPos},{self.endPos},{pyasstimedelta(self.startTime).total_milliseconds()},{pyasstimedelta(self.endTime).total_milliseconds()})"
 
         return f"\\move({self.startPos},{self.endPos})"
 
@@ -797,7 +805,6 @@ class RotationTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
         return RotationTag(Position.parse(rest.removeprefix("(").removesuffix(")")))
 
     def __str__(self) -> str:
@@ -840,8 +847,6 @@ class FadeTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         inDuration, outDuration = re.findall(r"\(([0-9]+),([0-9]+)\)", rest)[0]
         return FadeTag(
             timedelta(milliseconds=int(inDuration)),
@@ -849,7 +854,7 @@ class FadeTag(Tag):
         )
 
     def __str__(self) -> str:
-        return f"\\fad({pyass.timedelta(self.inDuration).total_milliseconds()},{pyass.timedelta(self.outDuration).total_milliseconds()})"
+        return f"\\fad({pyasstimedelta(self.inDuration).total_milliseconds()},{pyasstimedelta(self.outDuration).total_milliseconds()})"
 
 
 @dataclass
@@ -868,8 +873,6 @@ class ComplexFadeTag(Tag):
 
     @classmethod
     def _parse(cls, prefix: str, rest: str) -> Tag:
-        super()._parse(prefix, rest)
-
         args = rest.removeprefix("(").removesuffix(")").split(",")
         if len(args) != 7:
             raise ValueError
@@ -886,7 +889,7 @@ class ComplexFadeTag(Tag):
         )
 
     def __str__(self) -> str:
-        return f"\\fade({self.a1},{self.a2},{self.a3},{pyass.timedelta(self.t1).total_milliseconds()},{pyass.timedelta(self.t2).total_milliseconds()},{pyass.timedelta(self.t3).total_milliseconds()},{pyass.timedelta(self.t4).total_milliseconds()})"
+        return f"\\fade({self.a1},{self.a2},{self.a3},{pyasstimedelta(self.t1).total_milliseconds()},{pyasstimedelta(self.t2).total_milliseconds()},{pyasstimedelta(self.t3).total_milliseconds()},{pyasstimedelta(self.t4).total_milliseconds()})"
 
 
 @dataclass
@@ -945,11 +948,11 @@ class TransformTag(Tag):
             return f"\\t({self.accel},{self.to})"
         elif self.end is None:
             # Malformed tag
-            return f"\\t({pyass.timedelta(self.start).total_milliseconds()},,{self.to})"
+            return f"\\t({pyasstimedelta(self.start).total_milliseconds()},,{self.to})"
         elif self.accel == 1.0:
-            return f"\\t({pyass.timedelta(self.start).total_milliseconds()},{pyass.timedelta(self.end).total_milliseconds()},{self.to})"
+            return f"\\t({pyasstimedelta(self.start).total_milliseconds()},{pyasstimedelta(self.end).total_milliseconds()},{self.to})"
         else:
-            return f"\\t({pyass.timedelta(self.start).total_milliseconds()},{pyass.timedelta(self.end).total_milliseconds()},{self.accel},{self.to})"
+            return f"\\t({pyasstimedelta(self.start).total_milliseconds()},{pyasstimedelta(self.end).total_milliseconds()},{self.accel},{self.to})"
 
 
 @dataclass
